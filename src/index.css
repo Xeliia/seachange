@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+/* Nord palette, exposed as Tailwind colors (e.g. bg-nord0, text-nord3) */
+@theme {
+  --color-nord0: #2E3440;
+  --color-nord1: #3B4252;
+  --color-nord3: #4C566A;
+  --color-nord4: #D8DEE9;
+  --color-nord5: #E5E9F0;
+  --color-nord6: #ECEFF4;
+  --color-nord7: #8FBCBB;
+  --color-nord8: #88C0D0;
+  --color-nord10: #5E81AC;
+  --font-sans: "Public Sans", system-ui, sans-serif;
+  --font-serif: "Source Serif 4", Georgia, serif;
+}
+
+html { scroll-behavior: smooth; scroll-padding-top: 4rem; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body { background: #ECEFF4; color: #2E3440; font-family: var(--font-sans); line-height: 1.7; }
+
+/* Visible keyboard focus everywhere */
+:focus-visible { outline: 2px solid #5E81AC; outline-offset: 3px; }
+.on-dark :focus-visible { outline-color: #88C0D0; }
+.on-dark h2,
+.on-dark h3 { color: #ECEFF4; }
+.on-dark .link { color: #88C0D0; text-decoration-color: #88C0D0; }
+
+/* Text links: underlined in the accent color */
+.link { text-decoration: underline; text-decoration-color: #5E81AC; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+.link:hover { text-decoration-thickness: 2px; }
+
+figure figcaption {
+  text-align: center;
+}
+
+.current-lines {
+  position: relative;
+  width: min(100%, 28rem);
+  margin-top: 2.25rem;
+  overflow: hidden;
+  color: #5E81AC;
+  opacity: .8;
+}
+.current-lines svg {
+  display: block;
+  width: 125%;
+  height: 6.5rem;
+  transform: translateX(-10%);
+}
+.current-line {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+.current-line-primary {
+  color: #5E81AC;
+  stroke-width: 2.5;
+  animation: current-drift 4.5s ease-in-out infinite;
+}
+.current-line-secondary {
+  color: #88C0D0;
+  stroke-width: 1.75;
+  opacity: .8;
+  animation: current-drift-reverse 5.5s ease-in-out -1.25s infinite;
+}
+.current-line-tertiary {
+  color: #8FBCBB;
+  stroke-width: 1.25;
+  opacity: .75;
+  animation: current-drift 6.5s ease-in-out -2.5s infinite;
+}
+@keyframes current-drift {
+  0%, 100% { transform: translateX(-1.5%) translateY(3px); }
+  50% { transform: translateX(1.5%) translateY(-7px); }
+}
+@keyframes current-drift-reverse {
+  0%, 100% { transform: translateX(1.5%) translateY(-3px); }
+  50% { transform: translateX(-1.5%) translateY(7px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .current-line { animation: none; }
+}
