@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Menu, X, Zap, Landmark, MapPin, Users, Share2, Sun, Check } from 'lucide-react'
 
 /* ---------- Constants ---------- */
@@ -21,12 +21,13 @@ const navLinks = [
 // To add a photo: put the file in public/images/, set `src`, and fill `credit` with the verified
 // author, source and licence (e.g. 'Photo: Name / Wikimedia Commons, CC BY-SA 4.0').
 type Img = { src?: string; alt: string; need: string; credit?: string }
-const images: Record<'hero' | 'heat' | 'coast' | 'ph' | 'community', Img> = {
+const images: Record<'hero' | 'heat' | 'coast' | 'ph' | 'community' | 'communityPlanting', Img> = {
   hero: { src: '/images/open-ocean.jpeg', alt: 'A coastline meeting the open ocean', need: 'A wide, calm coastline or open ocean (landscape, ~21:9 crop).' },
   heat: { src: '/images/el-nino.jpg', alt: 'A dry, heat-affected landscape', need: 'A real heat-affected landscape, such as cracked dry ground.' },
   coast: { src: '/images/shoreline-erosion.jpg', alt: 'A shoreline with signs of erosion', need: 'A wide shoreline showing erosion or a seawall (not a single flood photo).' },
   ph: { src: '/images/shoreline-settlement.jpg', alt: 'A coastal community in the Philippines', need: 'A genuine photo of a Philippine coastal community or shoreline.' },
   community: { src: '/images/naga-tree-planting.jpg', alt: 'A community tree-growing activity in San Felipe, Naga City', need: 'A credited photograph of the San Felipe community climate action or a Naga City watershed landscape.' },
+  communityPlanting: { src: '/images/naga-2.jpg', alt: 'Two people planting a seedling in San Felipe, Naga City', need: 'A credited photograph of the San Felipe community climate action or a Naga City watershed landscape.' },
 }
 
 type Scenario = { at: number; title: string; intro: string; rows: { k: string; v: string }[] }
@@ -94,12 +95,19 @@ const sources = [
 
 /* ---------- Reusable pieces ---------- */
 
-function Figure({ img, caption, ratio = 'aspect-[4/3]' }: { img: Img; caption?: string; ratio?: string }) {
+function Figure({ img, caption, ratio = 'aspect-[4/3]', onOpen }: { img: Img; caption?: string; ratio?: string; onOpen?: (img: Img) => void }) {
   const text = [caption, img.credit].filter(Boolean).join(' ')
   return (
     <figure>
       {img.src ? (
-        <img src={img.src} alt={img.alt} loading="lazy" className={`w-full rounded-xl object-cover ${ratio}`} />
+        <button
+          type="button"
+          className="group block w-full cursor-zoom-in appearance-none border-0 bg-transparent p-0 text-left"
+          onClick={() => onOpen?.(img)}
+          aria-label={`Open image: ${img.alt}`}
+        >
+          <img src={img.src} alt={img.alt} loading="lazy" className={`w-full rounded-xl object-cover transition duration-300 group-hover:brightness-90 ${ratio}`} />
+        </button>
       ) : (
         <div role="img" aria-label={`Photo placeholder: ${img.need}`}
           className={`flex ${ratio} items-center justify-center border border-nord4 bg-nord5 p-6 text-center text-sm text-nord3`}>
@@ -108,6 +116,51 @@ function Figure({ img, caption, ratio = 'aspect-[4/3]' }: { img: Img; caption?: 
       )}
       {text && <figcaption className="mt-2 text-sm text-nord3">{text}</figcaption>}
     </figure>
+  )
+}
+
+function Lightbox({ image, onClose }: { image: Img | null; onClose: () => void }) {
+  const [closing, setClosing] = useState(false)
+  const closeButton = useRef<HTMLButtonElement>(null)
+
+  const finishClose = () => {
+    setClosing(true)
+    window.setTimeout(onClose, 180)
+  }
+
+  useEffect(() => {
+    if (!image) return
+    setClosing(false)
+    closeButton.current?.focus()
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') finishClose()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = previousOverflow
+    }
+  }, [image])
+
+  if (!image?.src) return null
+
+  return (
+    <div
+      className={`lightbox ${closing ? 'lightbox-closing' : ''}`}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Enlarged image: ${image.alt}`}
+      onClick={finishClose}
+    >
+      <div className="lightbox-panel" onClick={(event) => event.stopPropagation()}>
+        <button ref={closeButton} type="button" className="lightbox-close" onClick={finishClose} aria-label="Close enlarged image">
+          <X size={24} aria-hidden="true" />
+        </button>
+        <img src={image.src} alt={image.alt} />
+      </div>
+    </div>
   )
 }
 
@@ -238,6 +291,7 @@ function TemperatureSlider() {
 export default function App() {
   const [open, setOpen] = useState(false)
   const [subscribed, setSubscribed] = useState(false)
+  const [lightboxImage, setLightboxImage] = useState<Img | null>(null)
   const close = () => setOpen(false)
 
   return (
@@ -280,7 +334,7 @@ export default function App() {
                 <a href="#issue" className="mt-5 inline-block border border-nord0 px-5 py-2.5 text-sm hover:bg-nord0 hover:text-nord6">Understand the Issue</a>
               </div>
             </div>
-            <div className="mt-8 md:mt-10"><Figure img={images.hero} ratio="aspect-[16/9] md:aspect-[21/9]" /></div>
+            <div className="mt-8 md:mt-10"><Figure img={images.hero} ratio="aspect-[16/9] md:aspect-[21/9]" onOpen={setLightboxImage} /></div>
           </div>
           <div className="h-10 md:h-14" />
         </section>
@@ -288,7 +342,7 @@ export default function App() {
         {/* The rising heat: image left, text right */}
         <section id="issue" className={`border-t border-nord4 ${sectionPad}`}>
           <div className={`${wrap} grid items-center gap-8 md:grid-cols-2 md:gap-14`}>
-            <Figure img={images.heat} />
+            <Figure img={images.heat} onOpen={setLightboxImage} />
             <div>
               <H2>The world is getting warmer</H2>
               <div className="mt-5 max-w-[62ch] space-y-4 text-justify text-nord1">
@@ -325,7 +379,7 @@ export default function App() {
         {/* Consequences: wide photo, then two columns of text */}
         <section className={`border-t border-nord4 ${sectionPad}`}>
           <div className={wrap}>
-            <Figure img={images.coast} ratio="aspect-[16/9] md:aspect-[21/9]" caption="Long-term sea-level rise is separate from any single flood." />
+            <Figure img={images.coast} ratio="aspect-[16/9] md:aspect-[21/9]" caption="Long-term sea-level rise is separate from any single flood." onOpen={setLightboxImage} />
             <div className="mt-8 grid gap-6 md:grid-cols-[2fr_3fr] md:gap-14">
               <div>
                 <H2>When the water rises</H2>
@@ -351,7 +405,7 @@ export default function App() {
                 <p>For official Philippine climate information, start with <a className="link" href="https://www.pagasa.dost.gov.ph/">PAGASA</a>.</p>
               </div>
             </div>
-            <Figure img={images.ph} />
+            <Figure img={images.ph} onOpen={setLightboxImage} />
           </div>
         </section>
         <Wave from={DARK_WAVE_ALT} tone={TINT} />
@@ -359,26 +413,37 @@ export default function App() {
         {/* Community example: a specific place and shared local action */}
         <section id="community" className={`border-t border-nord4 ${sectionPad}`} style={{ background: TINT }}>
           <div className={wrap}>
-            <div className="grid gap-8 md:grid-cols-[2fr_3fr] md:gap-14">
-              <div>
-                <p className="text-sm uppercase tracking-widest text-nord3">A community example</p>
-                <H2 className="mt-2">San Felipe, Naga City</H2>
-                <div className="mt-8 flex justify-center">
-                  <Figure img={images.community} ratio="aspect-[4/3] w-full max-w-[24rem]" />
-                </div>
+            {/* Heading */}
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="text-sm uppercase tracking-widest text-nord3">A community example</p>
+              <H2 className="mt-2">San Felipe, Naga City</H2>
+            </div>
+
+            {/* Images, centered */}
+            <div className="mx-auto mt-10 grid max-w-4xl gap-4 sm:grid-cols-2">
+              <Figure img={images.community} ratio="aspect-[4/3]" onOpen={setLightboxImage} />
+              <Figure img={images.communityPlanting} ratio="aspect-[4/3]" onOpen={setLightboxImage} />
+            </div>
+
+            {/* Text fills the width */}
+            <div className="mx-auto mt-12 grid max-w-5xl gap-8 text-nord1 lg:grid-cols-2 lg:gap-14">
+              <div className="space-y-5">
+                <p>In San Felipe, Naga City, community members, youth leaders, and students joined the City Government of Naga and the Climate Change Commission for a science-based tree-growing activity. They planted <strong>100 narra seedlings and 160 vetiver grass saplings</strong>, alongside bamboo and fruit-bearing trees, to support forest restoration, watershed protection, soil stability, and livelihoods.</p>
+                <p>Naga lies within the Bicol River Basin at the foot of Mount Isarog, so restoring the watershed can help protect water flow and downstream communities. The project brought together about 100 community members.</p>
               </div>
-              <div className="max-w-[62ch] space-y-4 text-justify text-nord1">
-                <p>In San Felipe, Naga City, community members, youth leaders, and students joined the City Government of Naga and the Climate Change Commission in a science-based tree-growing activity. The effort included native narra trees, bamboo, fruit-bearing trees, and vetiver grass to support forest restoration, watershed protection, soil stability, and livelihoods.</p>
-                <p>Naga sits within the Bicol River Basin and at the foot of Mount Isarog. That makes local restoration a shared responsibility: what happens in the watershed can affect water flow, erosion, and downstream communities. The project brought together about 100 community members and planted 100 narra seedlings and 160 vetiver grass saplings.</p>
-                <p className="border-l-2 border-nord7 pl-4 font-serif text-lg text-nord0">&ldquo;Climate action cannot end with a plan. It must be translated into decisions, investments, and actions that communities can see and experience on the ground.&rdquo;</p>
-                <p className="text-sm text-nord3">— Robert E. A. Borje, Climate Change Commission Vice Chairperson and Executive Director, quoted in the Commission&rsquo;s October 2026 report.</p>
-                <p className="text-sm text-nord3">This is a documented example of collective local action. It is not presented as a quotation from a resident; the quotation is attributed to the national climate agency&rsquo;s official report.</p>
-                <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
-                  <a className="link" href="https://climate.gov.ph/news/1161" target="_blank" rel="noopener noreferrer">Climate Change Commission report</a>
-                  <a className="link" href="https://climateknowledgeportal.worldbank.org/country/philippines" target="_blank" rel="noopener noreferrer">World Bank climate profile</a>
-                  <a className="link" href="https://www.pagasa.dost.gov.ph/" target="_blank" rel="noopener noreferrer">PAGASA climate information</a>
-                </div>
-              </div>
+
+              <blockquote className="border-l-2 border-nord7 bg-nord6/50 px-5 py-4 lg:self-start">
+                <p className="font-serif text-lg leading-relaxed text-nord0">&ldquo;Climate action cannot end with a plan. It must be translated into decisions, investments, and actions that communities can see and experience on the ground.&rdquo;</p>
+                <footer className="mt-3 text-sm leading-relaxed text-nord3">— Robert E. A. Borje, Climate Change Commission Vice Chairperson and Executive Director, quoted in the Commission&rsquo;s October 2026 report.</footer>
+                <p className="mt-3 border-t border-nord4 pt-3 text-sm leading-relaxed text-nord3">This is a documented example of collective local action. The quotation is attributed to the national climate agency&rsquo;s official report, not to a resident.</p>
+              </blockquote>
+            </div>
+
+            {/* Links */}
+            <div className="mx-auto mt-8 flex max-w-5xl flex-wrap justify-center gap-x-6 gap-y-2 text-sm">
+              <a className="link" href="https://climate.gov.ph/news/1161" target="_blank" rel="noopener noreferrer">Climate Change Commission report</a>
+              <a className="link" href="https://climateknowledgeportal.worldbank.org/country/philippines" target="_blank" rel="noopener noreferrer">World Bank climate profile</a>
+              <a className="link" href="https://www.pagasa.dost.gov.ph/" target="_blank" rel="noopener noreferrer">PAGASA climate information</a>
             </div>
           </div>
         </section>
@@ -405,9 +470,9 @@ export default function App() {
           <div className={wrap}>
             <H2 className="text-center">Sources &amp; further reading</H2>
             <p className="mx-auto mt-5 max-w-[62ch] text-center text-nord1">The text on this page is a plain-language explanation. It does not quote statistics, apart from the roughly 1.1°C of warming to date reported by the IPCC. For figures, projections and dates, read the original sources below.</p>
-            <div className="mt-8 grid gap-8 md:grid-cols-3">
-              {sources.map((g, index) => (
-                <div key={g.group} className={index === sources.length - 1 ? 'md:col-start-2' : ''}>
+            <div className="mt-8 grid items-start gap-x-12 gap-y-8 md:grid-cols-2">
+              {sources.map((g) => (
+                <div key={g.group}>
                   <h3 className="font-serif text-lg font-semibold">{g.group}</h3>
                   <ul className="mt-3 space-y-3 text-sm">
                     {g.items.map((s) => (
@@ -467,6 +532,7 @@ export default function App() {
           </div>
         </div>
       </footer>
+      <Lightbox image={lightboxImage} onClose={() => setLightboxImage(null)} />
     </>
   )
 }
