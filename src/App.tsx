@@ -435,7 +435,7 @@ export default function App() {
               <blockquote className="border-l-2 border-nord7 bg-nord6/50 px-5 py-4 lg:self-start">
                 <p className="font-serif text-lg leading-relaxed text-nord0">&ldquo;Climate action cannot end with a plan. It must be translated into decisions, investments, and actions that communities can see and experience on the ground.&rdquo;</p>
                 <footer className="mt-3 text-sm leading-relaxed text-nord3">— Robert E. A. Borje, Climate Change Commission Vice Chairperson and Executive Director, quoted in the Commission&rsquo;s October 2026 report.</footer>
-                <p className="mt-3 border-t border-nord4 pt-3 text-sm leading-relaxed text-nord3">This is a documented example of collective local action. The quotation is attributed to the national climate agency&rsquo;s official report, not to a resident.</p>
+                <p className="mt-3 border-t border-nord4 pt-3 text-sm leading-relaxed text-nord3">The photos show the community project, while the quote is taken from a report by the Climate Change Commission.</p>
               </blockquote>
             </div>
 
@@ -469,7 +469,7 @@ export default function App() {
         <section id="sources" className={`border-t border-nord4 bg-nord5 ${sectionPad}`}>
           <div className={wrap}>
             <H2 className="text-center">Sources &amp; further reading</H2>
-            <p className="mx-auto mt-5 max-w-[62ch] text-center text-nord1">The text on this page is a plain-language explanation. It does not quote statistics, apart from the roughly 1.1°C of warming to date reported by the IPCC. For figures, projections and dates, read the original sources below.</p>
+            <p className="mx-auto mt-5 max-w-[62ch] text-center text-nord1">Learn about climate change, its effects, and why it matters. According to the IPCC, global temperatures in 2011–2020 were around 1.1°C higher than pre-industrial levels (1850–1900). You can also explore the sources below to learn more.</p>
             <div className="mt-8 grid items-start gap-x-12 gap-y-8 md:grid-cols-2">
               {sources.map((g) => (
                 <div key={g.group}>
